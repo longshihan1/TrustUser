@@ -5,11 +5,10 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 
-import de.robv.android.xposed.IXposedHookLoadPackage;
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
+import de.robv.android.xposed.*;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
+import java.lang.reflect.Method;
 
 import static de.robv.android.xposed.XposedHelpers.findAndHookConstructor;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
@@ -33,25 +32,40 @@ public class TrustUser implements IXposedHookLoadPackage {
             e.printStackTrace();
         }
         try {
-            findAndHookMethod("android.security.net.config.ManifestConfigSource",
-                    lpparam.classLoader, "getDefaultConfig", new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param)  {
-                            XposedHelpers.setIntField(param.thisObject, "mTargetSdkVersion", 10);
-                            XposedBridge.log(TAG + " >> getDefaultBuilder:0022:" + XposedHelpers.getIntField(param.thisObject, "mTargetSdkVersion"));
-                        }
-                    });
+//            findAndHookMethod("android.security.net.config.ManifestConfigSource",
+//                    lpparam.classLoader, "getDefaultConfig", new XC_MethodReplacement() {
+//                        @Override
+//                        protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+//                            Class manifestConfigSource=param.thisObject.getClass();
+//                            Method method=manifestConfigSource.getDeclaredMethod("getConfigSource");
+//                            method.setAccessible(true);
+//                            method.invoke(manifestConfigSource);
+//                            return null;
+//                        }
+//                    }      );
+                    findAndHookMethod("android.security.net.config.ManifestConfigSource",
+                            lpparam.classLoader, "getDefaultConfig", new XC_MethodHook() {
+                                @Override
+                                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                                    XposedHelpers.setIntField(param.thisObject, "mTargetSdkVersion", 10);
+                                    XposedHelpers.setObjectField(param.thisObject, "mConfigSource", null);
+                            XposedBridge.log(TAG + " >> getDefaultBuilder:0022:" +
+                                    XposedHelpers.getIntField(param.thisObject, "mTargetSdkVersion"));
+                                }
+                            });
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
         try {
-            findAndHookMethod("android.security.net.config.ManifestConfigSource$DefaultConfigSource",
-                    lpparam.classLoader, "getDefaultConfig", new XC_MethodHook() {
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                            XposedBridge.log(TAG + " >> getDefaultBuilder:003:" + param.args.length);
-                        }
-                    });
+//            findAndHookMethod("android.security.net.config.ManifestConfigSource$DefaultConfigSource",
+//                    lpparam.classLoader, "getDefaultConfig", new XC_MethodHook() {
+//                        @Override
+//                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+//                            XposedBridge.log(TAG + " >> getDefaultBuilder:003:" + param.args.length);
+//                        }
+//                    });
         } catch (Exception e) {
             e.printStackTrace();
         }
