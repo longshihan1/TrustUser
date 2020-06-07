@@ -30,24 +30,35 @@ public class TrustUser implements IXposedHookLoadPackage {
                         protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                             XposedHelpers.setIntField(param.thisObject, "mTargetSdkVersion", 23);
                             XposedHelpers.setObjectField(param.thisObject, "mConfigSource", null);
-                            Object o= XposedHelpers.getObjectField(param.thisObject, "mApplicationInfo");
-                            if (o instanceof ApplicationInfo){
-                                //如果匹配的上说明存在这个变量，修改这个变量,9.0新增
-                                // http://androidxref.com/9.0.0_r3//xref/frameworks/base/core/java/android/security/net/config/ManifestConfigSource.java
-                                ApplicationInfo info= (ApplicationInfo) o;
-                                info.targetSdkVersion=23;
-                                XposedHelpers.setObjectField(param.thisObject, "mApplicationInfo", info);
+//                            XposedHelpers.setIntField(param.thisObject, "mConfigResourceId", 0);
+                            XposedBridge.log(TAG + " >> getDefaultBuilder:0022:" + XposedHelpers.getIntField(param.thisObject, "mTargetSdkVersion"));
+                            XposedBridge.log(TAG + " >> getDefaultBuilder:0022:" + XposedHelpers.getIntField(param.thisObject, "mConfigResourceId"));
+                        }
+
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            //检查生成的数据
+                            Object mConfigSource = XposedHelpers.getObjectField(param.thisObject, "mConfigSource");
+                            if (mConfigSource != null) {//DefaultConfigSource
+                                XposedBridge.log(TAG + " >> getDefaultBuilder:有值:");
+                                Object mDefaultConfig = XposedHelpers.getObjectField(mConfigSource, "mDefaultConfig");
+                                if (mDefaultConfig != null) {
+                                    XposedBridge.log(TAG + " >> mDefaultConfig:有值:");
+                                    List mCertificatesEntryRefs = (List) XposedHelpers.getObjectField(mDefaultConfig, "mCertificatesEntryRefs");
+                                    if (mCertificatesEntryRefs != null) {
+                                        XposedBridge.log(TAG + " >> mCertificatesEntryRefs:有值:" + mCertificatesEntryRefs.size());
+                                    } else {
+                                        XposedBridge.log(TAG + " >> mCertificatesEntryRefs:为空");
+                                    }
+                                } else {
+                                    XposedBridge.log(TAG + " >> mDefaultConfig:为空");
+                                }
+                            } else {
+                                XposedBridge.log(TAG + " >> getDefaultBuilder:为空");
                             }
                         }
                     });
-            findAndHookMethod("android.app.Application", lpparam.classLoader, "attach", Context.class, new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    XposedBridge.log(TAG + " >> getDefaultBuilder:0054:" + param.args.length);
-                    Context context = (Context) param.args[0];
-                    processOkHttp(context.getClassLoader());
-                }
-            });
+
         } catch (Exception e) {
             e.printStackTrace();
         }
